@@ -1,0 +1,43 @@
+Chrome Extension Ideas
+- When the user opens a new tab, instead of the new tab page:
+		-Open a hacker random news article with a minimum number of points
+
+- click on the extension on any page to convert HTML into a playable level for some game?
+		- e.g. pacman
+		- maybe we color all divs one color, and all other elements another color
+				- colors define walls, etc
+				- some html elements could define special powerups
+
+- make a webpage into darkmode
+
+- capture something on webpage, make a post to slack automatically
+
+
+
+
+---------------- aimlab game -------------
+- class AimGame()
+		- new AimGame()
+		- properties on the game:
+				- this.score
+				- this.accuracy
+				- this.transformations
+
+		- methods on the game:
+				- getAllElements()
+				- assign unique z-index to each element on the page
+
+
+- get a collection of all html elements on the page
+- loop through elements
+		- if element === button
+				- if button has any elements in/on it
+						- keep that on button
+- "disarm" any existing onClicks, <a>, buttons
+		- once we have a collection of all elements, remove any/all eventListeners from each element
+- for each element, apply one random transformation from a list of possible transformations
+		- element has:
+				- update position = absolute
+				- add an eventListener `addEventListener('click')`
+				- a point value associated with its size
+
