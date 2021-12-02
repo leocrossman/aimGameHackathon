@@ -5,11 +5,12 @@ chrome.action.onClicked.addListener((tab) => {
   });
 });
 function main() {
-  window.scrollTo({
-    top: '50%',
-    // left: 100,
-    behavior: 'smooth',
-  });
+  const _docHeight =
+    document.height !== undefined
+      ? document.height
+      : document.body.offsetHeight;
+  const _docWidth =
+    document.width !== undefined ? document.width : document.body.offsetWidth;
   const originalHtml = document.documentElement.innerHTML;
   const game = {};
   game.score = 0;
@@ -18,15 +19,13 @@ function main() {
   game._accuracy = 0;
   game.accuracyPercent = `${100}%`; // init to 100%
   game.highScore = localStorage.getItem('aimGameHighScore') ?? 0; // return 0 if no high score
-  game.lowScore = localStorage.getItem('aimGameLowScore') ?? 0; // return 0 if no high score
-
-  //TODO ADD FAIL SOUND
+  game.lowScore = localStorage.getItem('aimGameLowScore') ?? 0; // return 0 if no low score
 
   // transformations
   const rotate360 = [
     { transform: 'rotate(360deg)' },
     {
-      duration: 40000,
+      duration: 80000,
       iterations: Infinity,
     },
   ];
@@ -62,23 +61,23 @@ function main() {
     [
       {
         transform: `translate3D(
-						500px, 50px, 0)`,
+						500px, 0px, 0)`,
       },
       {
         transform: `translate3D(
-						-250px, 500px, 200px)`,
+						0px, 500px, 200px)`,
       },
       {
         transform: `translate3D(
-						250px,-500px, 200px)`,
+						0px,-500px, 200px)`,
       },
       {
         transform: `translate3D(
-						-500px, -50px, 0)`,
+						-500px, 0px, 0)`,
       },
     ],
     {
-      duration: 10000,
+      duration: 20000,
       iterations: Infinity,
     },
   ];
@@ -87,7 +86,11 @@ function main() {
     [
       {
         transform: `translate3D(
-						500px, 4000px, 0)`,
+						-500px, -${_docHeight}px, 0)`,
+      },
+      {
+        transform: `translate3D(
+						500px, ${_docHeight}px, 0)`,
       },
       {
         transform: `translate3D(
@@ -97,13 +100,9 @@ function main() {
         transform: `translate3D(
 						250px,-500px, 200px)`,
       },
-      {
-        transform: `translate3D(
-						-500px, -4000px, 0)`,
-      },
     ],
     {
-      duration: 10000,
+      duration: 80000,
       iterations: Infinity,
     },
   ];
@@ -176,7 +175,9 @@ function main() {
 
   // lowScore stuff
   const lowScoreText = document.createElement('h1');
-  lowScoreText.innerText = `Worst: ${game.lowScore}`;
+  const emojiLaugh = document.createElement('span');
+  emojiLaugh.style.fontWeight = '100';
+  lowScoreText.display = 'inline-block';
   lowScoreText.style.position = 'fixed';
   lowScoreText.style.top = '35%';
   lowScoreText.style.left = '80%';
@@ -184,6 +185,9 @@ function main() {
   lowScoreText.style.textAlign = 'center';
   lowScoreText.style.zIndex = '999996';
 
+  emojiLaugh.innerHTML = '😂';
+  lowScoreText.innerText = `${game.lowScore}`;
+  lowScoreText.appendChild(emojiLaugh);
   document.body.appendChild(lowScoreText);
 
   // score stuff
@@ -201,7 +205,9 @@ function main() {
 
   // highScore stuff
   const highScoreText = document.createElement('h1');
-  highScoreText.innerText = `Best: ${game.highScore}`;
+  const emojiKing = document.createElement('span');
+  emojiKing.style.fontWeight = '100';
+  highScoreText.display = 'inline-block';
   highScoreText.style.position = 'fixed';
   highScoreText.style.top = '65%';
   highScoreText.style.left = '80%';
@@ -209,6 +215,9 @@ function main() {
   highScoreText.style.textAlign = 'center';
   highScoreText.style.zIndex = '999997';
 
+  emojiKing.innerHTML = '👑';
+  highScoreText.innerText = `${game.highScore}`;
+  highScoreText.appendChild(emojiKing);
   document.body.appendChild(highScoreText);
 
   // accuracy stuff
@@ -254,10 +263,20 @@ function main() {
       element.style.height = 'auto';
       element.style.margin = '0';
 
-      const newText = document.createElement('div');
-      newText.innerHTML = element.innerHTML;
-      element.parentNode.replaceChild(newText, element);
-      element = newText;
+      const newTextFromATag = document.createElement('div');
+      newTextFromATag.innerHTML = element.innerHTML;
+      element.parentNode.replaceChild(newTextFromATag, element);
+      element = newTextFromATag;
+    } else if (element.tagName === 'SPAN') {
+      element.style.zIndex = `${idx}`;
+      element.style.width = 'auto';
+      element.style.height = 'auto';
+      element.style.margin = '0';
+
+      const newTextFromSpanTag = document.createElement('div');
+      newTextFromSpanTag.innerHTML = element.innerHTML;
+      element.parentNode.replaceChild(newTextFromSpanTag, element);
+      element = newTextFromSpanTag;
     }
     element.animate(anim[0], anim[1]);
 
@@ -271,7 +290,7 @@ function main() {
       game.totalClicks++;
       if (game.score >= game.highScore) {
         game.highScore++;
-        highScoreText.innerText = `Best: ${game.highScore}`;
+        highScoreText.innerText = `👑 ${game.highScore}`;
         localStorage.setItem('aimGameHighScore', game.highScore);
       }
       game.score++;
@@ -303,7 +322,7 @@ function main() {
     game.totalClicks++;
     if (game.score <= game.lowScore) {
       game.lowScore--;
-      lowScoreText.innerText = `Worst: ${game.lowScore}`;
+      lowScoreText.innerText = `😂 ${game.lowScore}`;
       localStorage.setItem('aimGameLowScore', game.lowScore);
     }
     game.score--;
