@@ -13,6 +13,7 @@ function main() {
   game.totalClicks = 0;
   game._accuracy = 0;
   game.accuracyPercent = `${100}%`; // init to 100%
+  game.highScore = localStorage.getItem('aimGameHighScore') ?? 0; // return 0 if no high score
   const constrainToWindow = 9;
   // transformations
   const rotate360 = [{ transform: 'rotate(360deg)' }];
@@ -98,6 +99,18 @@ function main() {
 
   document.body.appendChild(scoreText);
 
+  // highScore stuff
+  const highScoreText = document.createElement('h1');
+  highScoreText.innerText = `Best: ${game.highScore}`;
+  highScoreText.style.position = 'fixed';
+  highScoreText.style.top = '65%';
+  highScoreText.style.left = '80%';
+  highScoreText.style.fontSize = '80px';
+  highScoreText.style.textAlign = 'center';
+  highScoreText.style.zIndex = '999997';
+
+  document.body.appendChild(highScoreText);
+
   // accuracy stuff
   const accuracyText = document.createElement('h1');
   accuracyText.innerText = game.accuracyPercent;
@@ -181,6 +194,11 @@ function main() {
       // }
       element.remove();
       game.totalClicks++;
+      if (game.score >= game.highScore) {
+        game.highScore++;
+        highScoreText.innerText = `Best: ${game.highScore}`;
+        localStorage.setItem('aimGameHighScore', game.highScore);
+      }
       game.score++;
       game.hitCount++;
       game._accuracy = game.hitCount / game.totalClicks;
