@@ -22,6 +22,12 @@ function main() {
   // get all elements from current tab
   game.getAllElements = function() {
     const elements = document.querySelectorAll('*');
+    // for (let i = 0; i < elements.length; i++) {
+    // 	const elementChildren = elements[i].childNodes;
+    // 	for (let j = 0; j < elementChildren.length; j++) {
+
+    // 	}
+    // }
     return [...elements];
   };
   const allElements = game.getAllElements();
@@ -42,7 +48,8 @@ function main() {
         el.tagName === 'SCRIPT' ||
         el.tagName === 'LINK' ||
         // el.tagName === 'HTML' ||
-        el.tagName === 'TITLE'
+        el.tagName === 'TITLE' ||
+        el.tagName === 'SVG'
         // el.tagName === 'HEAD'
         // el.tagName === 'A'
       ) {
@@ -56,10 +63,10 @@ function main() {
   const filteredElements = game.filterElements(allElements);
 
   // for-each element...
-  filteredElements.forEach((elementWithHandlers, idx) => {
+  filteredElements.forEach((element, idx) => {
     // remove all event handlers from each element
-    const element = elementWithHandlers.cloneNode(true);
-    elementWithHandlers.parentNode.replaceChild(element, elementWithHandlers);
+    // const element = elementWithHandlers.cloneNode(true);
+    // elementWithHandlers.parentNode.replaceChild(element, elementWithHandlers);
     // assign unique z-index to each element on the page
     element.style.zIndex = `${idx}`;
 
@@ -80,27 +87,25 @@ function main() {
     element.removeAttribute('href');
 
     // apply a transformation to each element
-    // element.animate(
-    //   [
-    //     { transform: 'translate3D(0, 0, 0)' },
-    //     { transform: 'translate3D(0, -300px, 0)' },
-    //   ],
-    //   {
-    //     duration: 10000,
-    //     iterations: Infinity,
-    //   }
-    // );
+    element.animate(
+      [
+        { transform: `translate3D(${idx}, 0, 0)` },
+        { transform: `translate3D(${Math.random() * idx}, 300px, 0)` },
+      ],
+      {
+        duration: 1000,
+        iterations: Infinity,
+      }
+    );
 
     // add a click eventlistener to each element
-    element.addEventListener('click', clickedElement);
-
-    console.log(element);
+    element.addEventListener('click', function(event) {
+      // remove the node from the body or display: none?
+      // element.style.display = 'none';
+      console.log(element);
+      element.remove();
+      console.log('removed');
+      game.score++;
+    });
   });
-
-  function clickedElement(el) {
-    // remove the node from the body or display: none?
-    el.style.display = 'none';
-
-    game.score++;
-  }
 }
