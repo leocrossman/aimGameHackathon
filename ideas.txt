@@ -41,3 +41,6 @@ Chrome Extension Ideas
 				- add an eventListener `addEventListener('click')`
 				- a point value associated with its size
 
+------ TO DO IF EXTRA TIME -------
+- instead of deleting elements that fail the filter:
+		- "disarm" them i.e. remove their href/type=submit/etc

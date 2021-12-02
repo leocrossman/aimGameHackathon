@@ -14,25 +14,88 @@ function main() {
   const game = {};
   game.score = 0;
   game.accuracy = 0;
-  game.transformations = [];
+
+  // transformations
+  const rotate360 = [{ transform: 'rotate(360deg)' }];
+  game.transformations = [rotate360];
 
   // get all elements from current tab
   game.getAllElements = function () {
     const elements = document.body.getElementsByTagName('*');
-    return elements;
+    return [...elements];
   };
   const allElements = game.getAllElements();
+  const maxSize = 200;
   // clean all elements (delete: <style>, etc)
   game.filterElements = function (elements) {
-    // filter if width and length != 0
-    // filter if style element
     return elements.filter((el, idx) => {
-      if (el.offsetWidth > someNumber && el.off) {
-        return el;
+      // filter if width and length < maxSize
+      if (
+        parseInt(el.offsetWidth) < maxSize &&
+        parseInt(el.offsetHeight) < maxSize
+      ) {
+        el.remove();
+        return false;
       }
+      // filter if style element
+      if (
+        el.tagName === 'script' ||
+        el.tagName === 'link' ||
+        el.tagName === 'html' ||
+        el.tagName === 'title' ||
+        el.tagName === 'head'
+      ) {
+        el.remove();
+        return false;
+      }
+
+      return true;
     });
   };
   const filteredElements = game.filterElements(allElements);
 
-  // assign unique z-index to each element on the page
+  // for-each element...
+  filteredElements.forEach((elementWithHandlers, idx) => {
+    // remove all event handlers from each element
+    const element = elementWithHandlers.cloneNode(true);
+    elementWithHandlers.parentNode.replaceChild(element, elementWithHandlers);
+    // assign unique z-index to each element on the page
+    element.style.zIndex = `${idx}`;
+    console.log(element);
+
+    // update position absolute
+    element.style.position = 'absolute';
+
+    // css cleanup -> "remove" classes/ids from elements
+    // but first... store a reference to w/h before styles change by deletion
+    const width = parseInt(element.offsetWidth);
+    const height = parseInt(element.offsetHeight);
+    element.style.width = width;
+    element.style.height = height;
+    // "delete"
+    element.setAttribute('id', `${idx}This_Couldnt_Possibly_Be_An_ID`);
+    element.setAttribute('class', `${idx}This_Couldnt_Possibly_Be_a_CLASS`);
+
+    // apply a transformation to each element
+    // element.animate(
+    //   [
+    //     { transform: 'translate3D(0, 0, 0)' },
+    //     { transform: 'translate3D(0, -300px, 0)' },
+    //   ],
+    //   {
+    //     duration: 10000,
+    //     iterations: Infinity,
+    //   }
+    // );
+
+    // add a click eventlistener to each element
+    element.addEventListener('click', clickedElement);
+  });
+
+  function clickedElement(el) {
+    // remove the node from the body or display: none?
+    el.style.display = none;
+
+    game.score++;
+  }
 }
