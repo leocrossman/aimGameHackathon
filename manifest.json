@@ -4,7 +4,14 @@
   "manifest_version": 3,
   "version": "1.0.0",
   "description": "Starts an Aim Game on the current page.",
+  "web_accessible_resources": [
+    {
+      "resources": ["hitmarker.mp3"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "permissions": ["activeTab", "scripting"],
+
   "background": {
     "service_worker": "background.js"
   }
