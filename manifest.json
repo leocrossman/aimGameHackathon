@@ -1,9 +1,11 @@
 {
-  "name": "AimGame",
-  "version": "1.0",
+  "name": "Aim Game",
+  "action": {},
   "manifest_version": 3,
+  "version": "1.0.0",
+  "description": "Starts an aim game on the current page.",
+  "permissions": ["activeTab", "scripting"],
   "background": {
     "service_worker": "background.js"
-  },
-  "action": {}
+  }
 }
