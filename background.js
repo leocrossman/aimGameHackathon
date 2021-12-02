@@ -5,7 +5,11 @@ chrome.action.onClicked.addListener((tab) => {
   });
 });
 function main() {
-  // localStorage.setItem('calendar', document.documentElement.innerHTML);
+  window.scrollTo({
+    top: '50%',
+    // left: 100,
+    behavior: 'smooth',
+  });
   const originalHtml = document.documentElement.innerHTML;
   const game = {};
   game.score = 0;
@@ -14,16 +18,108 @@ function main() {
   game._accuracy = 0;
   game.accuracyPercent = `${100}%`; // init to 100%
   game.highScore = localStorage.getItem('aimGameHighScore') ?? 0; // return 0 if no high score
-  const constrainToWindow = 9;
+  game.lowScore = localStorage.getItem('aimGameLowScore') ?? 0; // return 0 if no high score
+
+  //TODO ADD FAIL SOUND
+
   // transformations
-  const rotate360 = [{ transform: 'rotate(360deg)' }];
+  const rotate360 = [
+    { transform: 'rotate(360deg)' },
+    {
+      duration: 40000,
+      iterations: Infinity,
+    },
+  ];
+  const moveRightLeft = [
+    {
+      transform: `translate3d(500px,0,0)`,
+      transform: `translate3d(-500px,0,0)`,
+    },
+    {
+      duration: 20000,
+      iterations: Infinity,
+    },
+  ];
+
+  // downup animation
+
+  const rotato = [
+    [
+      { transform: 'translateX(300px) rotate(.5turn)' },
+      { transform: 'translateX(0) rotate(-.2turn)' },
+      { transform: 'translateX(800px) rotate(2.5turn)' },
+      { transform: 'translateX(0) rotate(-1.0turn)' },
+    ],
+    {
+      duration: 20000,
+      iterations: Infinity,
+      animationTimingFunction: 'ease-in-out',
+      animationDelay: 2000,
+    },
+  ];
+
+  const moveDownUp = [
+    [
+      {
+        transform: `translate3D(
+						500px, 50px, 0)`,
+      },
+      {
+        transform: `translate3D(
+						-250px, 500px, 200px)`,
+      },
+      {
+        transform: `translate3D(
+						250px,-500px, 200px)`,
+      },
+      {
+        transform: `translate3D(
+						-500px, -50px, 0)`,
+      },
+    ],
+    {
+      duration: 10000,
+      iterations: Infinity,
+    },
+  ];
+
+  const bigMoveDownUp = [
+    [
+      {
+        transform: `translate3D(
+						500px, 4000px, 0)`,
+      },
+      {
+        transform: `translate3D(
+						-250px, 500px, 200px)`,
+      },
+      {
+        transform: `translate3D(
+						250px,-500px, 200px)`,
+      },
+      {
+        transform: `translate3D(
+						-500px, -4000px, 0)`,
+      },
+    ],
+    {
+      duration: 10000,
+      iterations: Infinity,
+    },
+  ];
+
+  game.transformations = [
+    rotate360,
+    moveRightLeft,
+    moveDownUp,
+    rotato,
+    bigMoveDownUp,
+    [...bigMoveDownUp], // increase chances of lots of vertical movement
+  ];
   // add sound url
   let url = chrome.runtime.getURL('hitmarker.mp3');
   let hitMarker = new Audio(url);
   hitMarker.volume = 1;
-  console.log(hitMarker);
-
-  game.transformations = [rotate360];
 
   const getRandomAnim = () => {
     return game.transformations[
@@ -34,12 +130,6 @@ function main() {
   // get all elements from current tab
   game.getAllElements = function () {
     const elements = document.body.getElementsByTagName('*');
-    // for (let i = 0; i < elements.length; i++) {
-    // 	const elementChildren = elements[i].childNodes;
-    // 	for (let j = 0; j < elementChildren.length; j++) {
-    // 	}
-    // }
-    //console.log("before flat", [...elements]);
     return [...elements].flat(Infinity);
   };
   const allElements = game.getAllElements();
@@ -84,11 +174,21 @@ function main() {
   };
   // const filteredElements = game.filterElements(allElements);
 
+  // lowScore stuff
+  const lowScoreText = document.createElement('h1');
+  lowScoreText.innerText = `Worst: ${game.lowScore}`;
+  lowScoreText.style.position = 'fixed';
+  lowScoreText.style.top = '35%';
+  lowScoreText.style.left = '80%';
+  lowScoreText.style.fontSize = '80px';
+  lowScoreText.style.textAlign = 'center';
+  lowScoreText.style.zIndex = '999996';
+
+  document.body.appendChild(lowScoreText);
+
   // score stuff
   const scoreText = document.createElement('h1');
   scoreText.innerText = game.score;
-  //scoreText.style.margin = 'auto';
-  //scoreText.style.width = '100%';
   scoreText.style.position = 'fixed';
   scoreText.style.top = '50%';
   scoreText.style.left = '80%';
@@ -129,6 +229,7 @@ function main() {
     // const element = elementWithHandlers.cloneNode(true);
     // elementWithHandlers.parentNode.replaceChild(element, elementWithHandlers);
     // assign unique z-index to each element on the page
+
     element.style.zIndex = `${idx}`;
 
     element.removeAttribute('href');
@@ -144,46 +245,20 @@ function main() {
       element.setAttribute('src', '');
     }
 
-    // downup animation
-    const tenPercentOfElements = Math.random() < 0.1;
-    if (tenPercentOfElements) {
-      const downUp = [
-        [
-          {
-            transform: `translate3D(${
-              (idx / constrainToWindow) % window.innerWidth
-            }px, -50px, 0)`,
-          },
-          {
-            transform: `translate3D(${
-              (idx / constrainToWindow) % window.innerWidth
-            }px, ${
-              (JSON.stringify(element).length * 40) % window.innerHeight
-            }px, 200px)`,
-          },
-          {
-            transform: `translate3D(${
-              (idx / constrainToWindow) % window.innerWidth
-            }px, ${
-              (-1 * (JSON.stringify(element).length * 40)) % window.innerHeight
-            }px, 200px)`,
-          },
-          {
-            transform: `translate3D(${
-              (idx / constrainToWindow) % window.innerWidth
-            }px, -50px, 0)`,
-          },
-        ],
-        {
-          duration: 5000,
-          iterations: Infinity,
-        },
-      ];
-      game.transformations.push(downUp);
-    }
-
     const anim = getRandomAnim();
-    // const anim = getAnim(element, idx);
+
+    // change A tags to divs because for some reason they cant animate🙄
+    if (element.tagName === 'A') {
+      element.style.zIndex = `${idx}`;
+      element.style.width = 'auto';
+      element.style.height = 'auto';
+      element.style.margin = '0';
+
+      const newText = document.createElement('div');
+      newText.innerHTML = element.innerHTML;
+      element.parentNode.replaceChild(newText, element);
+      element = newText;
+    }
     element.animate(anim[0], anim[1]);
 
     //ON CLICK OF EACH ELEMENT
@@ -222,16 +297,21 @@ function main() {
     });
   });
 
+  //MISS CLICKS HANDLING
   //if click body, decrease point
-  // flash red text or body
   document.body.addEventListener('click', function (event) {
     game.totalClicks++;
+    if (game.score <= game.lowScore) {
+      game.lowScore--;
+      lowScoreText.innerText = `Worst: ${game.lowScore}`;
+      localStorage.setItem('aimGameLowScore', game.lowScore);
+    }
     game.score--;
     game._accuracy = game.hitCount / game.totalClicks;
-    game.accuracyPercent = `${game._accuracy}%`;
+    game.accuracyPercent = `${Math.round(game._accuracy * 100)}%`;
 
     scoreText.innerText = game.score;
-    accuracyPercent.innerText = game.accuracyPercent;
+    accuracyText.innerText = game.accuracyPercent;
 
     // flash red text or body
     //document.body.style.backgroundColor = 'red';
