@@ -1,4 +1,4 @@
-# Aim Game
+# Aim Game 🎯
 
 ### by Leo and Ruzeb
 
