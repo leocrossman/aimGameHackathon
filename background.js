@@ -1,25 +1,26 @@
-chrome.action.onClicked.addListener((tab) => {
+chrome.action.onClicked.addListener(tab => {
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
     function: main,
   });
 });
 function main() {
-  const _docHeight =
+  // get document height... or we can settle for body's offset >:(
+  const docHeight =
     document.height !== undefined
       ? document.height
       : document.body.offsetHeight;
-  const _docWidth =
-    document.width !== undefined ? document.width : document.body.offsetWidth;
+  // store original page html so we can put the page back together once the game is done
   const originalHtml = document.documentElement.innerHTML;
+  // we tried to create a game class but the technology just isn't there yet for chrome extensions
   const game = {};
   game.score = 0;
   game.hitCount = 0;
   game.totalClicks = 0;
   game._accuracy = 0;
   game.accuracyPercent = `${100}%`; // init to 100%
-  game.highScore = localStorage.getItem('aimGameHighScore') ?? 0; // return 0 if no high score
-  game.lowScore = localStorage.getItem('aimGameLowScore') ?? 0; // return 0 if no low score
+  game.highScore = localStorage.getItem('aimGameHighScore') ?? 0; // return 0 if high score === undefined/null
+  game.lowScore = localStorage.getItem('aimGameLowScore') ?? 0; // return 0 if low score === undefined/null
 
   // transformations
   const rotate360 = [
@@ -39,8 +40,6 @@ function main() {
       iterations: Infinity,
     },
   ];
-
-  // downup animation
 
   const rotato = [
     [
@@ -86,11 +85,11 @@ function main() {
     [
       {
         transform: `translate3D(
-						-500px, -${_docHeight}px, 0)`,
+						-500px, -${docHeight}px, 0)`,
       },
       {
         transform: `translate3D(
-						500px, ${_docHeight}px, 0)`,
+						500px, ${docHeight}px, 0)`,
       },
       {
         transform: `translate3D(
@@ -107,6 +106,7 @@ function main() {
     },
   ];
 
+  // each element on the page will randomly get one of these transformations assigned to it
   game.transformations = [
     rotate360,
     moveRightLeft,
@@ -115,7 +115,7 @@ function main() {
     bigMoveDownUp,
     [...bigMoveDownUp], // increase chances of lots of vertical movement
   ];
-  // add sound url
+  // add sound
   let url = chrome.runtime.getURL('hitmarker.mp3');
   let hitMarker = new Audio(url);
   hitMarker.volume = 1;
@@ -127,34 +127,33 @@ function main() {
   };
 
   // get all elements from current tab
-  game.getAllElements = function () {
+  game.getAllElements = function() {
     const elements = document.body.getElementsByTagName('*');
     return [...elements].flat(Infinity);
   };
   const allElements = game.getAllElements();
+  // nuke it!
   document.body.innerHTML = '';
   document.body.style.cursor = 'crosshair';
-  allElements.forEach((element) => {
+  allElements.forEach(element => {
     element.style.cursor = 'crosshair';
     document.body.appendChild(element);
   });
-  //console.log('still hasnt started')
 
-  const maxSize = 200;
-
+  // THIS FILTER FUNC WENT UNUSED BC IT WAS THE CAUSE OF DESTROYING ALL ELEMENTS
+  // WHENEVER ONE EVENTLISTENER FIRED but we kept it in to show our thought process
   // clean all elements (delete: <style>, etc)
-
-  game.filterElements = function (elements) {
-    return elements.filter((el, idx) => {
-      // filter if width and length < maxSize
+  game.filterElements = function(elements) {
+    // dont waste our time if one of your dimensions < 200 pixels
+    const minSize = 200;
+    return elements.filter(el => {
+      // filter if width and length < minSize (arbitrary bc too small is too hard to click on)
       if (
-        parseInt(el.offsetWidth) < maxSize &&
-        parseInt(el.offsetHeight) < maxSize
+        parseInt(el.offsetWidth) < minSize &&
+        parseInt(el.offsetHeight) < minSize
       ) {
-        //el.remove();
         return false;
       }
-      // filter if style element
       if (
         el.tagName === 'SCRIPT' ||
         el.tagName === 'LINK' ||
@@ -162,10 +161,7 @@ function main() {
         el.tagName === 'TITLE' ||
         el.tagName === 'BODY' ||
         el.tagName === 'SVG'
-        // el.tagName === 'HEAD'
-        // el.tagName === 'A'
       ) {
-        //el.remove();
         return false;
       }
       return true;
@@ -176,6 +172,8 @@ function main() {
   // lowScore stuff
   const lowScoreText = document.createElement('h1');
   const emojiLaugh = document.createElement('span');
+  // THIS IS A SICK HACK TO GET EMJOIS FILLED WITH COLOR IN CHROME
+  // IF YOU DON'T USE THIS YOUR EMOJIS WILL BE B&W EW
   emojiLaugh.style.fontWeight = '100';
   lowScoreText.display = 'inline-block';
   lowScoreText.style.position = 'fixed';
@@ -234,13 +232,10 @@ function main() {
 
   // for-each element...
   allElements.forEach((element, idx) => {
-    // remove all event handlers from each element
-    // const element = elementWithHandlers.cloneNode(true);
-    // elementWithHandlers.parentNode.replaceChild(element, elementWithHandlers);
     // assign unique z-index to each element on the page
-
     element.style.zIndex = `${idx}`;
 
+    // i hate <a> tags
     element.removeAttribute('href');
 
     // constrains elements to respective width and height
@@ -249,11 +244,12 @@ function main() {
 
     element.style.margin = '0';
 
-    // removes videos?
+    // removes videos
     if (element.tagName === 'IFRAME') {
       element.setAttribute('src', '');
     }
 
+    // pick a random animation for the current element
     const anim = getRandomAnim();
 
     // change A tags to divs because for some reason they cant animate🙄
@@ -267,6 +263,7 @@ function main() {
       newTextFromATag.innerHTML = element.innerHTML;
       element.parentNode.replaceChild(newTextFromATag, element);
       element = newTextFromATag;
+      // aaaaaand same for spans🙄
     } else if (element.tagName === 'SPAN') {
       element.style.zIndex = `${idx}`;
       element.style.width = 'auto';
@@ -282,10 +279,7 @@ function main() {
 
     //ON CLICK OF EACH ELEMENT
     // add a click eventlistener to each element
-    element.addEventListener('click', function (event) {
-      // if (element.tagName === 'BODY') {
-      //   console.log('body clicked');
-      // }
+    element.addEventListener('click', function(event) {
       element.remove();
       game.totalClicks++;
       if (game.score >= game.highScore) {
@@ -307,7 +301,7 @@ function main() {
       // flash green text or body
       //document.body.style.backgroundColor = 'green';
       scoreText.style.color = 'green';
-      setTimeout(function () {
+      setTimeout(function() {
         scoreText.style.color = origColor;
         document.body.style.backgroundColor = 'white';
       }, 200);
@@ -318,7 +312,7 @@ function main() {
 
   //MISS CLICKS HANDLING
   //if click body, decrease point
-  document.body.addEventListener('click', function (event) {
+  document.body.addEventListener('click', function(event) {
     game.totalClicks++;
     if (game.score <= game.lowScore) {
       game.lowScore--;
@@ -333,9 +327,8 @@ function main() {
     accuracyText.innerText = game.accuracyPercent;
 
     // flash red text or body
-    //document.body.style.backgroundColor = 'red';
     scoreText.style.color = 'red';
-    setTimeout(function () {
+    setTimeout(function() {
       document.body.style.backgroundColor = 'white';
       scoreText.style.color = origColor;
     }, 100);
@@ -343,11 +336,8 @@ function main() {
 
   document.body.overflowX = 'hidden';
 
-  // ! TIMER ELEMENT WAS BLOCKING ELEMENTS UNDER/NEXT TO IT FROM BEING CLICKED BC IT IS 100% WIDTH
   // create timer element
   const timer = document.createElement('h1');
-  //timer.style.margin = 'auto';
-  //timer.style.width = '100%';
   timer.style.position = 'fixed';
   timer.style.top = '10%';
   timer.style.left = '80%';
@@ -359,7 +349,7 @@ function main() {
 
   // timer stuff
   var countDownDate = Number(Date.now()) + 61000;
-  const x = setInterval(function () {
+  const x = setInterval(function() {
     var now = Number(Date.now());
 
     // Find the distance between now and the count down date
@@ -367,7 +357,8 @@ function main() {
     if (distance < 0) {
       clearInterval(x);
       timer.innerHTML = 'EXPIRED';
-      // location.reload();
+      // reset html back to its orignial state
+      // wouldn't be very nice to destory the dom and leave it that way!
       document.documentElement.innerHTML = originalHtml;
     } else {
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
@@ -376,10 +367,7 @@ function main() {
       if (seconds < 11) {
         timer.style.color = 'red';
       }
-      // Display the result in the element with id="demo"
       timer.innerHTML = seconds + 's ';
     }
-
-    // If the count down is finished, write some text
   }, 1000);
 }
